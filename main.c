@@ -193,7 +193,6 @@ uint64_t microtime()
 //*************************************
 // render functions
 //*************************************
-
 void rSphere(f32 x, f32 y, f32 z)
 {
     mIdent(&model);
@@ -208,7 +207,6 @@ void rSphere(f32 x, f32 y, f32 z)
 //*************************************
 // game functions
 //*************************************
-
 void newSim()
 {
     const int seed = urand_int();

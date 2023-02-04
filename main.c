@@ -201,7 +201,7 @@ void rSphere(f32 x, f32 y, f32 z)
     mMul(&modelview, &model, &view);
 
     glUniformMatrix4fv(modelview_id, 1, GL_FALSE, (f32*) &modelview.m[0][0]);
-    glDrawElements(GL_TRIANGLES, low_numind, GL_UNSIGNED_SHORT, 0);
+    glDrawElements(GL_TRIANGLES, low_numind, GL_UNSIGNED_BYTE, 0);
 }
 
 //*************************************

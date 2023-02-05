@@ -494,7 +494,7 @@ int main(int argc, char** argv)
     
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
-    glClearColor(0.13, 0.13, 0.13, 0.0);
+    glClearColor(0.13f, 0.13f, 0.13f, 0.0f);
 
     shadeLambert(&position_id, &projection_id, &modelview_id, &lightpos_id, &color_id, &opacity_id);
     glUniformMatrix4fv(projection_id, 1, GL_FALSE, (f32*) &projection.m[0][0]);

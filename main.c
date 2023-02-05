@@ -81,14 +81,6 @@ vec lightpos = {0.f, 0.f, 0.f};
 // models
 ESModel mdlSphere;
 
-// game vars
-#define FAR_DISTANCE 1000.f
-uint RENDER_PASS = 0;
-double st=0; // start time
-char tts[32];// time taken string
-f32 cd = 0.f;
-f32 cd2 = 0.f;
-
 // camera vars
 uint focus_cursor = 1;
 double sens = 0.001f;
@@ -96,7 +88,14 @@ f32 xrot = 2.6f;
 f32 yrot = 1.f;
 f32 zoom = -2.33f;
 
-// sim
+// sim vars
+#define FAR_DISTANCE 1000.f
+uint RENDER_PASS = 0;
+double st=0; // start time
+char tts[32];// time taken string
+f32 cd = 0.f;
+f32 cd2 = 0.f;
+
 #define MAX_SPHERES 1024
 f32 SPHERE_SCALE = 0.02f;
 f32 SPHERE_SPEED = 0.001f;

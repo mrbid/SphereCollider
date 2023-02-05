@@ -139,32 +139,6 @@ void timeTaken(uint ss)
             sprintf(tts, "%.2f Days", tt * 0.00000463);
     }
 }
-float urandf()
-{
-    static const float RECIP_FLOAT_UINT64_MAX = 1.f/(float)UINT64_MAX;
-    int f = open("/dev/urandom", O_RDONLY | O_CLOEXEC);
-    uint64_t s = 0;
-    read(f, &s, sizeof(uint64_t));
-    close(f);
-    return ((float)s) * RECIP_FLOAT_UINT64_MAX;
-}
-float urandfc()
-{
-    static const float RECIP_FLOAT_UINT64_MAX = 2.f/(float)UINT64_MAX;
-    int f = open("/dev/urandom", O_RDONLY | O_CLOEXEC);
-    uint64_t s = 0;
-    read(f, &s, sizeof(uint64_t));
-    close(f);
-    return (((float)s) * RECIP_FLOAT_UINT64_MAX)-1.f;
-}
-uint64_t urand64()
-{
-    int f = open("/dev/urandom", O_RDONLY | O_CLOEXEC);
-    uint64_t s = 0;
-    ssize_t result = read(f, &s, sizeof(uint64_t));
-    close(f);
-    return s;
-}
 int urand_int()
 {
     int f = open("/dev/urandom", O_RDONLY | O_CLOEXEC);
@@ -173,14 +147,6 @@ int urand_int()
     close(f);
     return s;
 }
-float fRandFloat(const float min, const float max)
-{
-    return min + randf() * (max-min); 
-}
-float uRandFloat(const float min, const float max)
-{
-    return urandf() * (max-min) + min;
-}
 uint64_t microtime()
 {
     struct timeval tv;
@@ -188,20 +154,6 @@ uint64_t microtime()
     memset(&tz, 0, sizeof(struct timezone));
     gettimeofday(&tv, &tz);
     return 1000000 * tv.tv_sec + tv.tv_usec;
-}
-
-//*************************************
-// render functions
-//*************************************
-void rSphere(f32 x, f32 y, f32 z)
-{
-    mIdent(&model);
-    mTranslate(&model, x, y, z);
-    mScale(&model, SPHERE_SCALE, SPHERE_SCALE, SPHERE_SCALE);
-    mMul(&modelview, &model, &view);
-
-    glUniformMatrix4fv(modelview_id, 1, GL_FALSE, (f32*) &modelview.m[0][0]);
-    glDrawElements(GL_TRIANGLES, low_numind, GL_UNSIGNED_BYTE, 0);
 }
 
 //*************************************
@@ -229,6 +181,17 @@ void newSim()
         spheres[i].c = 0.f;
     }
 }
+void orbitIn()
+{
+    for(uint i = 0; i < MAX_SPHERES; i++)
+    {
+        vRuvBT(&spheres[i].pos); // random point on outside of unit sphere
+        vMulS(&spheres[i].pos, spheres[i].pos, 1.01f+(randf()*0.02f)); // project it away from the unit sphere a little
+        vRuvBT(&spheres[i].dir); // random point on outside of unit sphere
+        vNorm(&spheres[i].dir); // hmm or not?
+        spheres[i].c = 0.f;
+    }
+}
 
 //*************************************
 // update & render
@@ -238,7 +201,6 @@ void main_loop()
 //*************************************
 // camera
 //*************************************
-
     if(focus_cursor == 1)
     {
         glfwGetCursorPos(window, &x, &y);
@@ -269,10 +231,17 @@ void main_loop()
     {
         if(RENDER_PASS == 1)
         {
-            if(spheres[i].c == 0)
-                glUniform3f(color_id, 0.f, 0.f, 1.f);
+            if(i == 0)
+            {
+                glUniform3f(color_id, 0.f, 1.f, 0.f);
+            }
             else
-                glUniform3f(color_id, 1.f, 0.f, 0.f);
+            {
+                if(spheres[i].c == 0)
+                    glUniform3f(color_id, 0.f, 0.f, 1.f);
+                else
+                    glUniform3f(color_id, 1.f, 0.f, 0.f);
+            }
         }
 
         vec inc;
@@ -333,7 +302,15 @@ void main_loop()
         }
         
         if(RENDER_PASS == 1)
-            rSphere(spheres[i].pos.x, spheres[i].pos.y, spheres[i].pos.z);
+        {
+            mIdent(&model);
+            mTranslate(&model, spheres[i].pos.x, spheres[i].pos.y, spheres[i].pos.z);
+            mScale(&model, SPHERE_SCALE, SPHERE_SCALE, SPHERE_SCALE);
+            mMul(&modelview, &model, &view);
+
+            glUniformMatrix4fv(modelview_id, 1, GL_FALSE, (f32*) &modelview.m[0][0]);
+            glDrawElements(GL_TRIANGLES, low_numind, GL_UNSIGNED_BYTE, 0);
+        }
     }
 
     if(RENDER_PASS == 1)
@@ -345,10 +322,8 @@ void main_loop()
 //*************************************
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    // control
     if(action == GLFW_PRESS)
     {
-        // new
         if(key == GLFW_KEY_N)
         {
             // end
@@ -361,8 +336,6 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
             // new
             newSim();
         }
-
-        // show average fps
         else if(key == GLFW_KEY_F)
         {
             if(t-lfct > 2.0)
@@ -377,27 +350,18 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
                 lc = 0;
             }
         }
-
-        // orbit in
         else if(key == GLFW_KEY_O)
         {
-            for(uint i = 0; i < MAX_SPHERES; i++)
-            {
-                vRuvBT(&spheres[i].pos); // random point on outside of unit sphere
-                vMulS(&spheres[i].pos, spheres[i].pos, 1.01f+(randf()*0.02f)); // project it away from the unit sphere a little
-                vRuvBT(&spheres[i].dir); // random point on outside of unit sphere
-                vNorm(&spheres[i].dir); // hmm or not?
-                spheres[i].c = 0.f;
-            }
+            orbitIn();
         }
     }
 }
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
-    if(yoffset == -1)
+    if(yoffset < 0)
         zoom += 0.06f * zoom;
-    else if(yoffset == 1)
+    else
         zoom -= 0.06f * zoom;
     
     if(zoom > -2.33f){zoom = -2.33f;}
@@ -471,6 +435,10 @@ int main(int argc, char** argv)
     printf("----\n");
     printf("Argv(2): msaa, maxfps\n");
     printf("e.g; ./uc 16 60\n");
+    printf("----\n");
+    printf("O = Orbit in.\n");
+    printf("N = New simulation.\n");
+    printf("F = FPS to console.\n");
     printf("----\n");
 
     // init glfw
@@ -553,14 +521,7 @@ int main(int argc, char** argv)
     newSim();
 
     // just for launch
-    for(uint i = 0; i < MAX_SPHERES; i++)
-    {
-        vRuvBT(&spheres[i].pos); // random point on outside of unit sphere
-        vMulS(&spheres[i].pos, spheres[i].pos, 1.01f+(randf()*0.02f)); // project it away from the unit sphere a little
-        vRuvBT(&spheres[i].dir); // random point on outside of unit sphere
-        vNorm(&spheres[i].dir); // hmm or not?
-        spheres[i].c = 0.f;
-    }
+    orbitIn();
     
     // lps accurate event loop
     const double fps_limit = 1.0 / maxfps;

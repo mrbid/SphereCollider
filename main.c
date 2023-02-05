@@ -156,7 +156,7 @@ uint64_t microtime()
 }
 
 //*************************************
-// game functions
+// sim functions
 //*************************************
 void newSim()
 {
